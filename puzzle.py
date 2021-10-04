@@ -1,13 +1,3 @@
-def minPath(tempVector):
-    minWeight = tempVector[0].getWeight
-    j = 0
-    for i in range(len(tempVector)):
-        if tempVector[i].getWeight() <= minWeight:
-            minWeight = tempVector[i].getWeight()
-            j = i
-    return minWeight, j
-
-
 class State:
     def __init__(self, currentState, finalState, depth):
         self.currentState = currentState
@@ -16,12 +6,9 @@ class State:
         self.manhattanDistance = self.calculateManhattanDistance()
         self.weight = self.calculateWeight()
 
-    def __print__(self):
-        for i in range(len(self.currentState) // 3):
-            print(f"{self.currentState[i * 3]} {self.currentState[i * 3 + 1]} {self.currentState[i * 3] + 2} ")
-
     def fullPrint(self):
-        print(self)
+        for i in range(len(self.currentState) // 3):
+            print(self.currentState[i*3:i*3+3])
         print(f"Manhattan distance is: {self.manhattanDistance}")
         print(f"Depth is: {self.depth}")
         print(f"Function is: {self.weight}")
@@ -61,7 +48,8 @@ class State:
         finalStateIsOdd = self.countInversions(False) % 2 == 1
         return startStateIsOdd == finalStateIsOdd
 
-    def isEqual(self, string, states):
+    @staticmethod
+    def isEqual(string, states):
         for state in states:
             if state.getCurrentState() == string:
                 return False
@@ -87,6 +75,16 @@ class State:
                 if el1 != el2:
                     count += 1
         return count
+
+    @staticmethod
+    def minPath(tempVector):
+        minWeight = tempVector[0].getWeight()
+        j = 0
+        for i in range(len(tempVector)):
+            if tempVector[i].getWeight() <= minWeight:
+                minWeight = tempVector[i].getWeight()
+                j = i
+        return minWeight, j
 
     def move(self, direction):
         zIndex = len(self.currentState) - 1 - self.currentState[::-1].index("0")
@@ -114,7 +112,7 @@ class State:
 
     @staticmethod
     def swap(string, index1, index2):
-        string = string.split("")
+        string = list(string)
         string[index1], string[index2] = string[index2], string[index1]
         return "".join(string)
 
@@ -134,7 +132,7 @@ class State:
                     temp[1].fullPrint()
                     allPaths.append(temp[1])
             minElement = self.getMinElement(tempVector, openPath)
-            minPath = minPath(openPath)
+            minPath = self.minPath(openPath)
             if self.getWeight() > minPath[0]:
                 print("Encountered the terminal node ")
                 for k in range(self.getDepth() - openPath[minPath[1]].getDepth()):
@@ -153,8 +151,12 @@ class State:
 
     @staticmethod
     def getMinElement(tempVector, paths):
-        minWeight = min(tempVector)
-        index = tempVector.find(minWeight)
+        minWeight = tempVector[0].getWeight()
+        index = 0
+        for i in range(1, len(tempVector)):
+            if tempVector[i].getWeight() < minWeight:
+                index = i
+                minWeight = tempVector[i].getWeight()
         for i in range(len(tempVector)):
             if i != index:
                 paths.append(tempVector[i])
@@ -163,8 +165,10 @@ class State:
 
 def main():
     print("Only 3x3")
-    startState = input("Enter start state:\n")
-    finalState = input("Enter final state:\n")
+    # startState = input("Enter start state:\n")
+    # finalState = input("Enter final state:\n")
+    startState = "876120345"
+    finalState = "876102345"
     state = State(startState, finalState, 0)
     if state.isSolvable():
         path = state.path()
@@ -175,4 +179,5 @@ def main():
         print("Unsolvable")
 
 
-main()
+if __name__ == '__main__':
+    main()
