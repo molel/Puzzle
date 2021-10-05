@@ -1,20 +1,25 @@
 class State:
-    def __init__(self, currentState, finalState, depth):
+    def __init__(self, currentState, finalState, depth, manhattanDistance=False, weight=False):
         self.currentState = currentState
         self.finalState = finalState
         self.depth = depth
-        self.manhattanDistance = self.calculateManhattanDistance()
-        self.weight = self.calculateWeight()
+        self.manhattanDistance = self.calculateManhattanDistance() if manhattanDistance is False else manhattanDistance
+        self.weight = self.calculateWeight() if weight is False else weight
+
+    def __str__(self):
+        return "\n".join([self.currentState[0:3], self.currentState[3:6], self.currentState[6:9]])
 
     def fullPrint(self):
-        for i in range(len(self.currentState) // 3):
-            print(self.currentState[i*3:i*3+3])
+        print(self)
         print(f"Manhattan distance is: {self.manhattanDistance}")
-        print(f"Depth is: {self.depth}")
-        print(f"Function is: {self.weight}")
+        print(f"Depth is: {self.getDepth()}")
+        print(f"Function is: {self.getWeight()}\n")
 
     def getCurrentState(self):
         return self.currentState
+
+    def getFinalState(self):
+        return self.finalState
 
     def getManhattanDistance(self):
         return self.manhattanDistance
@@ -41,7 +46,7 @@ class State:
         return self.manhattanDistance + self.depth
 
     def compare(self):
-        return self.currentState == self.finalState
+        return self.getCurrentState() == self.getFinalState()
 
     def isSolvable(self):
         startStateIsOdd = self.countInversions() % 2 == 1
@@ -57,10 +62,10 @@ class State:
 
     def calculateManhattanDistance(self):
         distance = 0
-        for i in range(len(self.currentState)):
+        for i in range(len(self.getCurrentState())):
             x1, x2 = self.getX(i), 0
             y1, y2 = self.getY(i), 0
-            for j in range(len(self.finalState)):
+            for j in range(len(self.getFinalState())):
                 if self.currentState[i] == self.finalState[j]:
                     x2 = self.getX(j)
                     y2 = self.getY(j)
@@ -69,15 +74,18 @@ class State:
 
     def countInversions(self, start=True):
         count = 0
-        iterObj = self.currentState if start else self.finalState
-        for el1 in iterObj:
-            for el2 in iterObj:
-                if el1 != el2:
+        iterObj = self.getCurrentState() if start else self.getFinalState()
+        for i in range(len(iterObj)):
+            for j in range(len(iterObj)):
+                el1 = iterObj[i]
+                el2 = iterObj[j]
+                if el1 == "0" or el2 == "0":
+                    continue
+                elif el2 < el1:
                     count += 1
         return count
 
-    @staticmethod
-    def minPath(tempVector):
+    def minPath(self, tempVector):
         minWeight = tempVector[0].getWeight()
         j = 0
         for i in range(len(tempVector)):
@@ -87,7 +95,7 @@ class State:
         return minWeight, j
 
     def move(self, direction):
-        zIndex = len(self.currentState) - 1 - self.currentState[::-1].index("0")
+        zIndex = self.getCurrentState().find("0")
         zX = self.getX(zIndex)
         zY = self.getY(zIndex)
         if direction == "left" and zX == 0 \
@@ -98,17 +106,17 @@ class State:
         index = 0
         if direction == "left":
             index = self.getIndex(zX - 1, zY)
-        elif direction == "right":
+        elif direction == "up":
             index = self.getIndex(zX, zY - 1)
         elif direction == "down":
             index = self.getIndex(zX, zY + 1)
-        elif direction == "up":
+        elif direction == "right":
             index = self.getIndex(zX + 1, zY)
-        tempCurrentState = self.currentState
+        tempCurrentState = self.getCurrentState()
+        tempFinalState = self.getFinalState()
         tempCurrentState = self.swap(tempCurrentState, index, zIndex)
-        self.currentState = tempCurrentState
-        self.depth += 1
-        return [True, self]
+        state = State(tempCurrentState, tempFinalState, self.getDepth() + 1)
+        return [True, state]
 
     @staticmethod
     def swap(string, index1, index2):
@@ -119,35 +127,45 @@ class State:
     def path(self):
         openPath = []
         allPaths = [self]
-        correctPath = [self]
+        correctPath = [State(*vars(self).values())]
         step = 1
         while not self.compare():
             print(f"Step {step}")
             tempVector = []
             print(f"Possible movement options ")
-            for direction in ["left", "right", "ip", "down"]:
+            for direction in ["left", "right", "up", "down"]:
                 temp = self.move(direction)
                 if temp[0] and temp[1] != allPaths:
                     tempVector.append(temp[1])
                     temp[1].fullPrint()
                     allPaths.append(temp[1])
-            minElement = self.getMinElement(tempVector, openPath)
+            self.changeState(self.getMinElement(tempVector, openPath))
             minPath = self.minPath(openPath)
             if self.getWeight() > minPath[0]:
                 print("Encountered the terminal node ")
                 for k in range(self.getDepth() - openPath[minPath[1]].getDepth()):
-                    correctPath.pop()
+                    try:
+                        correctPath.pop()
+                    except:
+                        continue
                 print("Back to state: ")
-                self.currentState = openPath[minPath[1]]
+                self.changeState(openPath[minPath[1]])
                 openPath[-1], openPath[minPath[1]] = openPath[minPath[1]], openPath[-1]
-                openPath.pop()
+                print(openPath.pop())
                 print(self)
             else:
-                correctPath.append(self)
+                correctPath.append(State(*vars(self).values()))
                 print("Selected state: ")
                 self.fullPrint()
             step += 1
         return correctPath
+
+    def changeState(self, state):
+        self.currentState = state.currentState
+        self.finalState = state.finalState
+        self.depth = state.depth
+        self.manhattanDistance = state.manhattanDistance
+        self.weight = state.weight
 
     @staticmethod
     def getMinElement(tempVector, paths):
@@ -167,14 +185,14 @@ def main():
     print("Only 3x3")
     # startState = input("Enter start state:\n")
     # finalState = input("Enter final state:\n")
-    startState = "876120345"
-    finalState = "876102345"
+    startState = "384670125"
+    finalState = "804375612"
     state = State(startState, finalState, 0)
     if state.isSolvable():
         path = state.path()
         print("Path is")
-        for i in path:
-            print(i)
+        for i in range(len(path)):
+            print(f"Step {i + 1}:\n{path[i]}\n")
     else:
         print("Unsolvable")
 
