@@ -52,9 +52,9 @@ class State:
         return self.get_current_state() == self.get_final_state()
 
     def is_solvable(self):
-        startStateIsOdd = self.count_inversions() % 2 == 1
-        finalStateIsOdd = self.count_inversions(start=False) % 2 == 1
-        return startStateIsOdd == finalStateIsOdd
+        start_state_is_odd = self.count_inversions() % 2 == 1
+        final_state_is_odd = self.count_inversions(start=False) % 2 == 1
+        return start_state_is_odd == final_state_is_odd
 
     def calculate_manhattan_distance(self):
         distance = 0
@@ -73,47 +73,47 @@ class State:
         state = self.get_current_state() if start else self.get_final_state()
         for i in range(len(state)):
             for j in range(len(state)):
-                firstElement = state[i]
-                secondElement = state[j]
-                if firstElement == "0" or secondElement == "0":
+                first_element = state[i]
+                second_element = state[j]
+                if first_element == "0" or second_element == "0":
                     continue
-                elif secondElement < firstElement:
+                elif second_element < first_element:
                     count += 1
         return count
 
     @staticmethod
-    def min_path(listOfStates):
-        minWeight = listOfStates[0].get_weight()
+    def min_path(list_of_states):
+        min_weight = list_of_states[0].get_weight()
         j = 0
-        for i in range(len(listOfStates)):
-            if listOfStates[i].get_weight() <= minWeight:
-                minWeight = listOfStates[i].get_weight()
+        for i in range(len(list_of_states)):
+            if list_of_states[i].get_weight() <= min_weight:
+                min_weight = list_of_states[i].get_weight()
                 j = i
-        return minWeight, j
+        return min_weight, j
 
     def move(self, direction):
-        zIndex = self.get_current_state().find("0")
-        zX = self.get_x(zIndex)
-        zY = self.get_y(zIndex)
-        if direction == "left" and zX == 0 \
-                or direction == "right" and zX >= 2 \
-                or direction == "down" and zY >= 2 \
-                or direction == "up" and zY == 0:
+        z_index = self.get_current_state().find("0")
+        z_x = self.get_x(z_index)
+        z_y = self.get_y(z_index)
+        if direction == "left" and z_x == 0 \
+                or direction == "right" and z_x >= 2 \
+                or direction == "down" and z_y >= 2 \
+                or direction == "up" and z_y == 0:
             return False, self
         index = 0
         if direction == "left":
-            index = self.get_index(zX - 1, zY)
+            index = self.get_index(z_x - 1, z_y)
         elif direction == "up":
-            index = self.get_index(zX, zY - 1)
+            index = self.get_index(z_x, z_y - 1)
         elif direction == "down":
-            index = self.get_index(zX, zY + 1)
+            index = self.get_index(z_x, z_y + 1)
         elif direction == "right":
-            index = self.get_index(zX + 1, zY)
-        tempCurrentState = self.get_current_state()
-        tempFinalState = self.get_final_state()
-        tempCurrentState = self.swap(tempCurrentState, index, zIndex)
-        state = State(tempCurrentState, tempFinalState, self.get_depth() + 1)
-        return [True, state]
+            index = self.get_index(z_x + 1, z_y)
+        temp_current_state = self.get_current_state()
+        temp_final_state = self.get_final_state()
+        temp_current_state = self.swap(temp_current_state, index, z_index)
+        state = State(temp_current_state, temp_final_state, self.get_depth() + 1)
+        return True, state
 
     @staticmethod
     def swap(string, index1, index2):
@@ -161,25 +161,23 @@ class State:
         self.weight = state.get_weight()
 
     @staticmethod
-    def get_min_element(tempVector, paths):
-        minWeight = tempVector[0].get_weight()
+    def get_min_element(temp_vector, paths):
+        min_weight = temp_vector[0].get_weight()
         index = 0
-        for i in range(1, len(tempVector)):
-            if tempVector[i].get_weight() < minWeight:
+        for i in range(1, len(temp_vector)):
+            if temp_vector[i].get_weight() < min_weight:
                 index = i
-                minWeight = tempVector[i].get_weight()
-        for i in range(len(tempVector)):
+                min_weight = temp_vector[i].get_weight()
+        for i in range(len(temp_vector)):
             if i != index:
-                paths.append(tempVector[i])
-        return tempVector[index]
+                paths.append(temp_vector[i])
+        return temp_vector[index]
 
 
 def main():
     print("Only 3x3")
-    # start_state = input("Enter start state:\n")
-    # final_state = input("Enter final state:\n")
-    start_state = "384670125"
-    final_state = "804375612"
+    start_state = input("Enter start state:\n")
+    final_state = input("Enter final state:\n")
     state = State(start_state, final_state, 0)
     if state.is_solvable():
         path = state.path()
