@@ -1,19 +1,20 @@
+from random import choice
+
+
 class State:
-    def __init__(self, current_state, final_state, depth, manhattan_distance=True, weight=True):
+    directions = {
+        "left": -1,
+        "right": 1,
+        "up": -3,
+        "down": 3,
+    }
+
+    def __init__(self, current_state, final_state, depth):
         self.current_state = current_state
         self.final_state = final_state
         self.depth = depth
-        self.manhattan_distance = self.calculate_manhattan_distance() if manhattan_distance else manhattan_distance
-        self.weight = self.calculate_weight() if weight else weight
-
-    def __str__(self):
-        return "\n".join([self.current_state[0:3], self.current_state[3:6], self.current_state[6:9]])
-
-    def full_print(self):
-        print(self)
-        print(f"Manhattan distance is: {self.get_manhattan_distance()}")
-        print(f"Depth is: {self.get_depth()}")
-        print(f"Function is: {self.get_weight()}\n")
+        self.manhattan_distance = self.calculate_manhattan_distance()
+        self.z_index = current_state.find("0")
 
     def get_current_state(self):
         return self.current_state
@@ -27,26 +28,8 @@ class State:
     def get_depth(self):
         return self.depth
 
-    def get_weight(self):
-        return self.weight
-
-    @staticmethod
-    def get_x(index):
-        return index % 3
-
-    @staticmethod
-    def get_y(index):
-        return index // 3
-
-    @staticmethod
-    def get_index(x, y):
-        return y * 3 + x
-
-    def get_attributes(self):
-        return vars(self).values()
-
-    def calculate_weight(self):
-        return self.get_manhattan_distance() + self.get_depth()
+    def get_z_index(self):
+        return self.z_index
 
     def compare(self):
         return self.get_current_state() == self.get_final_state()
@@ -59,12 +42,12 @@ class State:
     def calculate_manhattan_distance(self):
         distance = 0
         for i in range(len(self.get_current_state())):
-            x1, x2 = self.get_x(i), 0
-            y1, y2 = self.get_y(i), 0
+            x1 = i % 3
+            y1 = i // 3
             for j in range(len(self.get_final_state())):
                 if self.get_current_state()[i] == self.get_final_state()[j]:
-                    x2 = self.get_x(j)
-                    y2 = self.get_y(j)
+                    x2 = j % 3
+                    y2 = j // 3
                     distance += abs(x2 - x1) + abs(y2 - y1)
         return distance
 
@@ -82,108 +65,95 @@ class State:
         return count
 
     @staticmethod
-    def min_path(list_of_states):
-        min_weight = list_of_states[0].get_weight()
-        j = 0
-        for i in range(len(list_of_states)):
-            if list_of_states[i].get_weight() <= min_weight:
-                min_weight = list_of_states[i].get_weight()
-                j = i
-        return min_weight, j
-
-    def move(self, direction):
-        z_index = self.get_current_state().find("0")
-        z_x = self.get_x(z_index)
-        z_y = self.get_y(z_index)
-        if direction == "left" and z_x == 0 \
-                or direction == "right" and z_x >= 2 \
-                or direction == "down" and z_y >= 2 \
-                or direction == "up" and z_y == 0:
-            return False, self
-        index = 0
-        if direction == "left":
-            index = self.get_index(z_x - 1, z_y)
-        elif direction == "up":
-            index = self.get_index(z_x, z_y - 1)
-        elif direction == "down":
-            index = self.get_index(z_x, z_y + 1)
-        elif direction == "right":
-            index = self.get_index(z_x + 1, z_y)
-        temp_current_state = self.get_current_state()
-        temp_final_state = self.get_final_state()
-        temp_current_state = self.swap(temp_current_state, index, z_index)
-        state = State(temp_current_state, temp_final_state, self.get_depth() + 1)
-        return True, state
-
-    @staticmethod
     def swap(string, index1, index2):
         string = list(string)
         string[index1], string[index2] = string[index2], string[index1]
         return "".join(string)
 
-    def path(self):
-        open_path = []
-        all_paths = [self]
-        correct_path = [State(*self.get_attributes())]
-        step = 1
-        while not self.compare():
-            print(f"Step {step}")
-            temp_path = []
-            print(f"Possible movement options ")
-            for direction in ["left", "right", "up", "down"]:
-                temp = self.move(direction)
-                if temp[0] and temp[1] != all_paths:
-                    temp_path.append(temp[1])
-                    temp[1].full_print()
-                    all_paths.append(temp[1])
-            self.change_state(self.get_min_element(temp_path, open_path))
-            min_path = self.min_path(open_path)
-            if self.get_weight() > min_path[0]:
-                print("Encountered the terminal node ")
-                for k in range(self.get_depth() - open_path[min_path[1]].get_depth()):
-                    correct_path.pop()
-                print("Back to state: ")
-                self.change_state(open_path[min_path[1]])
-                open_path[-1], open_path[min_path[1]] = open_path[min_path[1]], open_path[-1]
-                print(open_path.pop(), "\n")
-            else:
-                correct_path.append(State(*self.get_attributes()))
-                print("Selected state: ")
-                self.full_print()
-            step += 1
-        return correct_path
+    @staticmethod
+    def find_minimal_state(states):
+        min_distance = min([state.get_manhattan_distance() for state in states])
+        result = []
+        for state in states:
+            if state.get_manhattan_distance() == min_distance:
+                result.append(state)
+        return choice(result)
 
-    def change_state(self, state):
+    def change_current_state(self, state):
         self.current_state = state.get_current_state()
         self.final_state = state.get_final_state()
         self.depth = state.get_depth()
         self.manhattan_distance = state.get_manhattan_distance()
-        self.weight = state.get_weight()
+        self.z_index = state.get_z_index()
 
     @staticmethod
-    def get_min_element(temp_vector, paths):
-        min_weight = temp_vector[0].get_weight()
-        index = 0
-        for i in range(1, len(temp_vector)):
-            if temp_vector[i].get_weight() < min_weight:
-                index = i
-                min_weight = temp_vector[i].get_weight()
-        for i in range(len(temp_vector)):
-            if i != index:
-                paths.append(temp_vector[i])
-        return temp_vector[index]
+    def rollback_state(states, target_state):
+        for state in reversed(states):
+            if state != target_state:
+                states.pop(-1)
+            else:
+                break
+
+    def move(self, direction):
+        if direction == "left" and self.get_z_index() % 3 != 0 or \
+                direction == "right" and self.get_z_index() % 3 != 2 or \
+                direction == "up" and self.get_z_index() > 2 or \
+                direction == "down" and self.get_z_index() < 6:
+            new_state = self.swap(self.get_current_state(), self.z_index,
+                                  self.z_index + State.directions[direction])
+            return State(new_state, self.final_state, self.get_depth() + 1)
+        else:
+            return
+
+    def get_new_states(self, open_states):
+        new_states = []
+        for direction in State.directions.keys():
+            new_state = self.move(direction)
+            if new_state and new_state.get_current_state() not in open_states:
+                new_states.append(new_state)
+        return new_states
+
+    def path(self, current_path, open_states):
+        if not self.compare():
+            new_states = self.get_new_states(open_states)
+            if len(new_states) == 0:
+                self.rollback_state(current_path, current_path[-2])
+            else:
+                next_state = self.find_minimal_state(new_states)
+                self.depth += 1
+                if next_state.get_current_state() in open_states:
+                    self.rollback_state(current_path, next_state.get_current_state())
+                else:
+                    open_states.append(next_state.get_current_state())
+                    current_path.append(next_state.get_current_state())
+                self.change_current_state(next_state)
+            return self.path(current_path, open_states)
+        else:
+            return current_path
+
+
+def find_path_and_depth(start_state, final_state):
+    try:
+        state = State(start_state, final_state, 0)
+        path = state.path([state.get_current_state()], [state.get_current_state()])
+        return path, state.get_depth()
+    except:
+        return find_path_and_depth(start_state, final_state)
 
 
 def main():
     print("Only 3x3")
-    start_state = input("Enter start state:\n")
-    final_state = input("Enter final state:\n")
+    # start_state = input("Enter start state:\n")
+    # final_state = input("Enter final state:\n")
+    start_state = "872651430"
+    final_state = "123456780"
     state = State(start_state, final_state, 0)
     if state.is_solvable():
-        path = state.path()
-        print("Path is")
+        path, depth = find_path_and_depth(start_state, final_state)
+        print(f"Length is {len(path)}")
         for i in range(len(path)):
-            print(f"Step {i + 1}:\n{path[i]}\n")
+            print(f"Step {i}:\n{path[i][0:3]}\n{path[i][3:6]}\n{path[i][6:9]}\n")
+        print(f"Depth is {depth}")
     else:
         print("Unsolvable")
 
