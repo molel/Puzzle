@@ -121,11 +121,8 @@ class State:
             else:
                 next_state = self.find_minimal_state(new_states)
                 self.depth += 1
-                if next_state.get_current_state() in open_states:
-                    self.rollback_state(current_path, next_state.get_current_state())
-                else:
-                    open_states.append(next_state.get_current_state())
-                    current_path.append(next_state.get_current_state())
+                open_states.append(next_state.get_current_state())
+                current_path.append(next_state.get_current_state())
                 self.change_current_state(next_state)
             return self.path(current_path, open_states)
         else:
